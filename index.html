@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#f8fafc" id="metaTheme">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <title>Lista de la Compra</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-hover: #f1f5f9;
+      --text: #1e293b;
+      --text-dim: #64748b;
+      --accent: #2563eb;
+      --checked: #16a34a;
+      --border: #e2e8f0;
+      --cat-bg: #f1f5f9;
+      --modal-bg: rgba(0,0,0,0.4);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-hover: #334155;
+      --text: #f1f5f9;
+      --text-dim: #94a3b8;
+      --accent: #3b82f6;
+      --checked: #22c55e;
+      --border: #334155;
+      --cat-bg: #1e293b;
+      --modal-bg: rgba(0,0,0,0.6);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px 0;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .header-top h1 { font-size: 20px; font-weight: 700; }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .counter {
+      font-size: 13px;
+      color: var(--text-dim);
+      background: var(--surface);
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+    .counter b { color: var(--checked); }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .icon-btn:active { background: var(--surface-hover); }
+
+    .search-bar {
+      position: relative;
+      margin-bottom: 10px;
+    }
+    .search-bar input {
+      width: 100%;
+      padding: 8px 12px 8px 34px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+    }
+    .search-bar input:focus { border-color: var(--accent); }
+    .search-bar::before {
+      content: '\1F50D';
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+    }
+    .search-clear {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: transparent;
+      font-size: 16px;
+      cursor: pointer;
+      color: var(--text-dim);
+      display: none;
+    }
+    .search-clear.visible { display: block; }
+
+    .store-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding-bottom: 12px;
+    }
+
+    .store-tab {
+      padding: 7px 14px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--text-dim);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .store-tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .tab-count {
+      display: inline-block;
+      margin-left: 4px;
+      font-size: 11px;
+      opacity: 0.7;
+    }
+
+    main { padding: 12px 16px 80px; }
+
+    /* Frequent suggestions */
+    .freq-section { margin-bottom: 16px; }
+    .freq-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+    .freq-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .freq-chip {
+      padding: 6px 12px;
+      border-radius: 16px;
+      border: 1.5px dashed var(--accent);
+      background: transparent;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .freq-chip:active { background: var(--surface-hover); }
+
+    /* Recurrent banner */
+    .recurrent-banner {
+      background: var(--surface);
+      border: 1.5px solid var(--accent);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+    .recurrent-banner p {
+      font-size: 13px;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .recurrent-banner .freq-chips { margin-bottom: 8px; }
+    .recurrent-dismiss {
+      font-size: 12px;
+      color: var(--text-dim);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .category { margin-bottom: 16px; }
+
+    .cat-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--cat-bg);
+      border-radius: 10px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .cat-icon { font-size: 18px; }
+
+    .cat-name {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      flex: 1;
+    }
+
+    .cat-count { font-size: 12px; color: var(--text-dim); }
+
+    .cat-chevron {
+      color: var(--text-dim);
+      font-size: 12px;
+      transition: transform 0.2s;
+    }
+
+    .cat-header.collapsed .cat-chevron { transform: rotate(-90deg); }
+
+    .product-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .product-list.hidden { display: none; }
+
+    .product {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.1s;
+      user-select: none;
+    }
+
+    .product:active { background: var(--surface-hover); }
+
+    .checkbox {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .product.checked .checkbox {
+      background: var(--checked);
+      border-color: var(--checked);
+    }
+
+    .product.checked .checkbox::after {
+      content: '';
+      width: 6px;
+      height: 10px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg) translate(-1px, -1px);
+    }
+
+    .product-info { flex: 1; min-width: 0; }
+
+    .product-name {
+      font-size: 15px;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+
+    .product.bought .product-name {
+      text-decoration: line-through;
+      color: var(--text-dim);
+    }
+
+    .product-stores {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 1px;
+    }
+
+    .product-note {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-style: italic;
+      margin-top: 1px;
+    }
+
+    .product-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+      align-items: center;
+    }
+
+    .product-actions button {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .product-actions button:active { background: var(--surface-hover); }
+
+    /* Quantity controls */
+    .qty-controls {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+    .qty-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+    }
+    .qty-btn:active { background: var(--surface-hover); }
+    .qty-val {
+      font-size: 14px;
+      font-weight: 700;
+      min-width: 20px;
+      text-align: center;
+      color: var(--accent);
+    }
+
+    /* List total */
+    .list-total {
+      text-align: right;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--accent);
+      border-top: 1.5px solid var(--border);
+      margin-top: 8px;
+    }
+
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 12px 16px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom, 8px));
+      background: linear-gradient(transparent, var(--bg) 20%);
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .bottom-bar button {
+      pointer-events: auto;
+      padding: 10px 20px;
+      border-radius: 24px;
+      border: none;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    .bottom-bar button.visible { opacity: 1; transform: translateY(0); }
+    .bottom-bar button:active { transform: scale(0.95); }
+
+    .list-btn {
+      background: var(--accent);
+      color: white;
+    }
+
+    .reset-btn {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    .empty { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-text { font-size: 15px; }
+
+    .pending-btn {
+      padding: 5px 12px;
+      border-radius: 16px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--text-dim);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: none;
+    }
+    .pending-btn.visible { display: block; }
+    .pending-btn.active {
+      background: #dc2626;
+      border-color: #dc2626;
+      color: white;
+    }
+
+    .pending-badge {
+      display: inline-block;
+      background: #dc2626;
+      color: white;
+      border-radius: 10px;
+      padding: 0 6px;
+      font-size: 11px;
+      margin-left: 4px;
+    }
+
+    .pending-date {
+      font-size: 10px;
+      color: #f87171;
+      margin-top: 2px;
+    }
+
+    .add-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-size: 28px;
+      font-weight: 300;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .add-btn:active { transform: scale(0.9); }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--modal-bg);
+      z-index: 200;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border-radius: 16px 16px 0 0;
+      padding: 20px 16px;
+      padding-bottom: calc(20px + env(safe-area-inset-bottom, 8px));
+      width: 100%;
+      max-width: 500px;
+      max-height: 85dvh;
+      overflow-y: auto;
+    }
+
+    .modal h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+    }
+
+    .modal label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+      margin-top: 12px;
+    }
+
+    .modal input, .modal select, .modal textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      outline: none;
+      font-family: inherit;
+    }
+    .modal input:focus, .modal select:focus, .modal textarea:focus {
+      border-color: var(--accent);
+    }
+    .modal textarea { resize: vertical; min-height: 40px; }
+
+    .modal-stores {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .modal-store-chip {
+      padding: 6px 12px;
+      border-radius: 16px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--text-dim);
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .modal-store-chip.selected {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .modal-actions button {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-cancel {
+      background: var(--border);
+      color: var(--text);
+    }
+    .btn-save {
+      background: var(--accent);
+      color: white;
+    }
+    .btn-danger {
+      background: #dc2626;
+      color: white;
+    }
+
+    /* Settings modal sections */
+    .settings-section {
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .settings-section:last-child { border-bottom: none; }
+    .settings-section h3 {
+      font-size: 15px;
+      margin-bottom: 10px;
+    }
+    .settings-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .settings-row button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .settings-row button:active { background: var(--surface-hover); }
+
+    /* History list */
+    .history-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .history-item {
+      padding: 10px;
+      border-radius: 8px;
+      background: var(--bg);
+      margin-bottom: 6px;
+    }
+    .history-date {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .history-products {
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+    .history-empty {
+      font-size: 13px;
+      color: var(--text-dim);
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* Monthly spend bars */
+    .spend-chart { margin-top: 12px; }
+    .spend-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .spend-label {
+      font-size: 12px;
+      color: var(--text-dim);
+      width: 50px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .spend-bar-bg {
+      flex: 1;
+      height: 18px;
+      background: var(--bg);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .spend-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      padding-left: 6px;
+    }
+    .spend-bar-fill span {
+      font-size: 10px;
+      color: white;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-top">
+      <h1>Lista de la Compra</h1>
+      <div class="header-actions">
+        <div class="counter" id="counter" aria-live="polite"></div>
+        <button class="pending-btn" id="pendingBtn" onclick="togglePending()" aria-label="Ver pendientes">Pendientes</button>
+        <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" aria-label="Cambiar tema"></button>
+        <button class="icon-btn" onclick="openSettings()" aria-label="Ajustes">&#9881;</button>
+        <button class="add-btn" onclick="openAddModal()" aria-label="Añadir producto">+</button>
+      </div>
+    </div>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Buscar producto..." aria-label="Buscar producto" oninput="onSearch()">
+      <button class="search-clear" id="searchClear" onclick="clearSearch()" aria-label="Limpiar búsqueda">&times;</button>
+    </div>
+    <div class="store-tabs" id="storeTabs" role="tablist"></div>
+  </header>
+  <main id="main"></main>
+
+  <!-- Add/Edit product modal -->
+  <div class="modal-overlay" id="addModal" onclick="closeModalOverlay(event, 'addModal')">
+    <div class="modal">
+      <h2>Nuevo producto</h2>
+      <label>Nombre</label>
+      <input type="text" id="addName" placeholder="Ej: Tomates">
+      <label>Categoría</label>
+      <select id="addCategory"></select>
+      <label>Tiendas (pulsa para seleccionar)</label>
+      <div class="modal-stores" id="addStores"></div>
+      <label>Nota (opcional)</label>
+      <textarea id="addNote" rows="2" placeholder="Ej: solo ecológica"></textarea>
+      <label>Precio unitario (opcional)</label>
+      <input type="number" id="addPrice" placeholder="0.00" step="0.01" min="0">
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeAddModal()">Cancelar</button>
+        <button class="btn-save" onclick="saveProduct()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div class="modal-overlay" id="settingsModal" onclick="closeModalOverlay(event, 'settingsModal')">
+    <div class="modal">
+      <h2>Ajustes</h2>
+
+      <div class="settings-section">
+        <h3>Backup</h3>
+        <div class="settings-row">
+          <button onclick="exportData()">Exportar JSON</button>
+          <button onclick="document.getElementById('importFile').click()">Importar JSON</button>
+        </div>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+      </div>
+
+      <div class="settings-section">
+        <h3>Historial de compras</h3>
+        <div class="history-list" id="historyList"></div>
+      </div>
+
+      <div class="settings-section">
+        <h3>Gasto mensual estimado</h3>
+        <div id="spendChart"></div>
+      </div>
+
+      <div class="settings-section" id="installSection" style="display:none">
+        <h3>Instalar app</h3>
+        <div class="settings-row">
+          <button onclick="installApp()">Instalar en dispositivo</button>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeSettings()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="list-btn" id="listBtn" onclick="toggleMyList()">Ver mi lista</button>
+    <button class="reset-btn" id="clearBtn" onclick="clearMyList()">Comprar</button>
+    <button class="reset-btn" id="resetBtn" onclick="clearMyList()">Limpiar</button>
+  </div>
+
+  <script>
+    const DATA = [
+      { name: "FRUTAS", products: [
+        { name: "Fresas", stores: ["Cualquiera"] },
+        { name: "Kiwis", stores: ["Cualquiera"] },
+        { name: "Naranjas", stores: ["Cualquiera"] },
+        { name: "Plátanos", stores: ["Cualquiera"] },
+        { name: "Limones", stores: ["Cualquiera"] },
+        { name: "Sandía/Melón", stores: ["Cualquiera"] }
+      ]},
+      { name: "VERDURAS", products: [
+        { name: "Judías verdes", stores: ["Cualquiera"] },
+        { name: "Calabacines", stores: ["Cualquiera"] },
+        { name: "Berenjenas", stores: ["Cualquiera"] },
+        { name: "Cebollas", stores: ["Cualquiera"] },
+        { name: "Zanahorias", stores: ["Cualquiera"] },
+        { name: "Pimientos", stores: ["Cualquiera"] },
+        { name: "Puerros", stores: ["Cualquiera"] },
+        { name: "Ajos", stores: ["Cualquiera"] },
+        { name: "Patatas", stores: ["Cualquiera"] },
+        { name: "Brócoli", stores: ["Cualquiera"] },
+        { name: "Coliflor", stores: ["Lidl"] },
+        { name: "Champiñones", stores: ["Cualquiera"] },
+        { name: "Espinacas", stores: ["Cualquiera"] }
+      ]},
+      { name: "CARNE", products: [
+        { name: "Pechuga pollo", stores: ["Cualquiera"] },
+        { name: "Filetes lomo", stores: ["Mercadona"] },
+        { name: "Filetes cabeza lomo", stores: ["Mercadona"] },
+        { name: "Salchichas pollo", stores: ["Lidl"] },
+        { name: "Salchichas cerdo", stores: ["Cualquiera"] },
+        { name: "Carne picada cerdo/vacuno", stores: ["Cualquiera"] },
+        { name: "Pavo", stores: ["Cualquiera"] },
+        { name: "Chorizo", stores: ["Lidl", "Mercadona"] },
+        { name: "Morcilla", stores: ["Cualquiera"] },
+        { name: "Taco de lomo", stores: ["Mercadona"] }
+      ]},
+      { name: "PESCADO", products: [
+        { name: "Salmón", stores: ["Aldi"] },
+        { name: "Salmón ahumado", stores: ["Lidl"] },
+        { name: "Atún", stores: ["Mercadona"] },
+        { name: "Boquerones en vinagre", stores: ["Mercadona", "Aldi"] },
+        { name: "Anchoas", stores: ["Cualquiera"] },
+        { name: "Sardinas lata", stores: ["Mercadona"] },
+        { name: "Merluza", stores: ["Mercadona"] },
+        { name: "Marisco paella", stores: ["Lidl", "Mercadona"] }
+      ]},
+      { name: "FIAMBRE", products: [
+        { name: "Jamón serrano", stores: ["Mercadona"] },
+        { name: "Chorizo picante", stores: ["Mercadona"] },
+        { name: "Jamón cocido", stores: ["Aldi"] },
+        { name: "Pechuga pollo fiambre", stores: ["Aldi"] }
+      ]},
+      { name: "LÁCTEOS", products: [
+        { name: "Queso tierno", stores: ["Mercadona"] },
+        { name: "Queso cottage", stores: ["Mercadona"] },
+        { name: "Yogures Bifidus naturales", stores: ["Mercadona"] },
+        { name: "Yogures s/a sabores", stores: ["Mercadona"] },
+        { name: "Leche entera", stores: ["Cualquiera"] },
+        { name: "Nata cocinar", stores: ["Cualquiera"] },
+        { name: "Queso parmesano", stores: ["Cualquiera"] },
+        { name: "Leche arroz y coco", stores: ["Mercadona"] },
+        { name: "Queso filadelfia", stores: ["Aldi"] }
+      ]},
+      { name: "ESPECIAS", products: [
+        { name: "Orégano", stores: ["Cualquiera"] },
+        { name: "Romero", stores: ["Cualquiera"] },
+        { name: "Ajo en polvo", stores: ["Cualquiera"] },
+        { name: "Pimienta", stores: ["Cualquiera"] },
+        { name: "Sal", stores: ["Cualquiera"] },
+        { name: "Canela polvo", stores: ["Cualquiera"] },
+        { name: "Canela rama", stores: ["Cualquiera"] }
+      ]},
+      { name: "FRUTOS SECOS", products: [
+        { name: "Nueces", stores: ["Aldi"] },
+        { name: "Anacardos", stores: ["Aldi"] },
+        { name: "Mix natural", stores: ["Aldi"] },
+        { name: "Pistachos", stores: ["Lidl"] }
+      ]},
+      { name: "OTROS", products: [
+        { name: "Aceitunas", stores: ["Aldi"] },
+        { name: "Gazpacho", stores: ["Mercadona"] },
+        { name: "Salmorejo", stores: ["Mercadona"] },
+        { name: "Chocolate negro", stores: ["Cualquiera"] },
+        { name: "Sacarina", stores: ["Mercadona"] },
+        { name: "Cacao en polvo", stores: ["Mercadona"] },
+        { name: "Manzanilla normal", stores: ["Cualquiera"] },
+        { name: "Manzanilla anís", stores: ["Cualquiera"] },
+        { name: "Eritritol", stores: ["Mercadona"] }
+      ]},
+      { name: "BEBIDAS", products: [
+        { name: "Agua", stores: ["Lidl", "Mercadona"] },
+        { name: "Casera", stores: ["Cualquiera"] },
+        { name: "Coca cola 0.0", stores: ["Cualquiera"] },
+        { name: "Cerveza", stores: ["Cualquiera"] }
+      ]},
+      { name: "GATOSITOS", products: [
+        { name: "Arena", stores: ["Mercadona"] },
+        { name: "Chuches crujientes", stores: ["Lidl"] },
+        { name: "Sopitas", stores: ["Amazon"] },
+        { name: "Churu", stores: ["Amazon"] },
+        { name: "Muslos de pollo", stores: ["Cualquiera"] },
+        { name: "Pienso", stores: ["Amazon"] }
+      ]},
+      { name: "HIDRATOS OCASIONALES", products: [
+        { name: "Arroz integral", stores: ["Lidl"] },
+        { name: "Pasta integral", stores: ["Lidl"] }
+      ]},
+      { name: "DROGUERÍA", products: [
+        { name: "Rollo cocina", stores: ["Mercadona"] },
+        { name: "Papel higiénico", stores: ["Mercadona"] },
+        { name: "Bolsas de basura", stores: ["Mercadona"] },
+        { name: "Bolsitas cacones", stores: ["Mercadona"] },
+        { name: "Ambientador baño", stores: ["Mercadona"] },
+        { name: "Ambientador varillas bambú", stores: ["Mercadona"] },
+        { name: "Tapones oídos", stores: ["Mercadona"] },
+        { name: "Salva slip", stores: ["Eloise"] },
+        { name: "Tampax", stores: ["Eloise"] },
+        { name: "Algodones", stores: ["Cualquiera"] },
+        { name: "Papel albal", stores: ["Cualquiera"] },
+        { name: "Papel horno", stores: ["Cualquiera"] },
+        { name: "Papel film", stores: ["Cualquiera"] },
+        { name: "Toallitas lavadora", stores: ["Cualquiera"] },
+        { name: "Detergente", stores: ["Lidl"] },
+        { name: "Sanitoleo", stores: ["Cualquiera"] },
+        { name: "Multiusos", stores: ["Mercadona"] },
+        { name: "Friegasuelos", stores: ["Mercadona"] },
+        { name: "Fairy", stores: ["Lidl"] },
+        { name: "Estropajos", stores: ["Cualquiera"] },
+        { name: "Balletas", stores: ["Cualquiera"] },
+        { name: "Limpia WC", stores: ["Lidl"] },
+        { name: "Limpia baños", stores: ["Lidl"] },
+        { name: "Bastoncillos orejas", stores: ["Cualquiera"] },
+        { name: "Old spice", stores: ["Primor"] },
+        { name: "Dove", stores: ["Primor", "Eloise"] },
+        { name: "Body milk", stores: ["Mercadona"] }
+      ]}
+    ];
+
+    // Merge custom products
+    const customProducts = JSON.parse(localStorage.getItem('lista-custom') || '[]');
+    customProducts.forEach(cp => {
+      let cat = DATA.find(c => c.name === cp.category);
+      if (!cat) { cat = { name: cp.category, products: [] }; DATA.push(cat); }
+      if (!cat.products.find(p => p.name === cp.name)) {
+        cat.products.push({ name: cp.name, stores: cp.stores });
+      }
+    });
+
+    const ALL_STORES = ['Aldi', 'Amazon', 'Cualquiera', 'Eloise', 'Lidl', 'Mercadona', 'Primor'];
+    let selectedStores = [];
+    let editingProduct = null;
+
+    const CATEGORY_ICONS = {
+      'FRUTAS': '\u{1F353}', 'VERDURAS': '\u{1F966}', 'CARNE': '\u{1F969}', 'PESCADO': '\u{1F41F}',
+      'FIAMBRE': '\u{1F953}', 'LÁCTEOS': '\u{1F9C0}', 'ESPECIAS': '\u{1F33F}', 'FRUTOS SECOS': '\u{1F95C}',
+      'OTROS': '\u{1F4E6}', 'BEBIDAS': '\u{1F964}', 'GATOSITOS': '\u{1F431}',
+      'HIDRATOS OCASIONALES': '\u{1F35A}', 'DROGUERÍA': '\u{1F9F9}'
+    };
+
+    let currentStore = 'Todas';
+    let checked = JSON.parse(localStorage.getItem('lista-checked') || '{}');
+    let myList = JSON.parse(localStorage.getItem('lista-mylist') || '{}');
+    let bought = JSON.parse(localStorage.getItem('lista-bought') || '{}');
+    let pending = JSON.parse(localStorage.getItem('lista-pending') || '[]');
+    let pendingBought = JSON.parse(localStorage.getItem('lista-pending-bought') || '{}');
+    let collapsed = JSON.parse(localStorage.getItem('lista-collapsed') || '{}');
+    let qty = JSON.parse(localStorage.getItem('lista-qty') || '{}');
+    let notes = JSON.parse(localStorage.getItem('lista-notes') || '{}');
+    let prices = JSON.parse(localStorage.getItem('lista-prices') || '{}');
+    // One-shot cleanup of test data
+    if (!localStorage.getItem('lista-cleared-v3')) {
+      ['lista-history','lista-pending','lista-pending-bought','lista-prices','lista-notes'].forEach(k => localStorage.removeItem(k));
+      pending = []; pendingBought = {}; notes = {}; prices = {};
+      localStorage.setItem('lista-cleared-v3', '1');
+    }
+    let history = JSON.parse(localStorage.getItem('lista-history') || '[]');
+    let showMyList = false;
+    let showPending = false;
+    let searchQuery = '';
+    let recurrentDismissed = JSON.parse(sessionStorage.getItem('lista-recurrent-dismissed') || 'false');
+    let pendingDismissed = false;
+    let deferredInstallPrompt = null;
+
+    // --- Theme ---
+    function initTheme() {
+      const saved = localStorage.getItem('lista-theme');
+      const theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      applyTheme(theme);
+    }
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      document.getElementById('themeBtn').textContent = theme === 'dark' ? '\u2600\uFE0F' : '\u{1F319}';
+      const color = theme === 'dark' ? '#0f172a' : '#f8fafc';
+      document.getElementById('metaTheme').setAttribute('content', color);
+    }
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'light';
+      const next = current === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('lista-theme', next);
+      applyTheme(next);
+    }
+
+    // --- Search ---
+    function onSearch() {
+      searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+      document.getElementById('searchClear').classList.toggle('visible', searchQuery.length > 0);
+      render();
+    }
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      searchQuery = '';
+      document.getElementById('searchClear').classList.remove('visible');
+      render();
+    }
+
+    // --- Stores ---
+    function getStores() {
+      const s = new Set();
+      DATA.forEach(c => c.products.forEach(p => p.stores.forEach(st => {
+        if (st !== 'Cualquiera') s.add(st);
+      })));
+      return ['Todas', ...Array.from(s).sort()];
+    }
+
+    function getFilteredProducts(cat) {
+      let products = cat.products;
+      if (showMyList) {
+        products = products.filter(p => myList[p.name]);
+      } else if (currentStore !== 'Todas') {
+        products = products.filter(p => p.stores.includes(currentStore));
+      }
+      if (searchQuery) {
+        products = products.filter(p => p.name.toLowerCase().includes(searchQuery));
+      }
+      return products;
+    }
+
+    function countForStore(store) {
+      if (store === 'Todas') return DATA.reduce((n, c) => n + c.products.length, 0);
+      return DATA.reduce((n, c) => n + c.products.filter(p => p.stores.includes(store)).length, 0);
+    }
+
+    function renderStoreTabs() {
+      const tabs = getStores();
+      document.getElementById('storeTabs').innerHTML = tabs.map(s => {
+        const cls = s === currentStore ? 'store-tab active' : 'store-tab';
+        return '<button class="' + cls + '" role="tab" aria-selected="' + (s === currentStore) + '" onclick="setStore(\'' + s + '\')">' +
+          s + '<span class="tab-count">' + countForStore(s) + '</span></button>';
+      }).join('');
+    }
+
+    function setStore(store) {
+      currentStore = store;
+      renderStoreTabs();
+      render();
+    }
+
+    function escapeAttr(s) {
+      return s.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+    function escapeHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // --- Frequent suggestions ---
+    function getFrequentProducts() {
+      if (history.length < 3) return [];
+      const freq = {};
+      history.forEach(h => {
+        h.items.forEach(item => {
+          freq[item.name] = (freq[item.name] || 0) + 1;
+        });
+      });
+      return Object.entries(freq)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8)
+        .filter(([name]) => !checked[name])
+        .map(([name]) => name)
+        .slice(0, 5);
+    }
+
+    // --- Recurrent detection ---
+    function getRecurrentProducts() {
+      if (history.length < 3) return [];
+      const last10 = history.slice(-10);
+      const count = {};
+      last10.forEach(h => {
+        h.items.forEach(item => {
+          count[item.name] = (count[item.name] || 0) + 1;
+        });
+      });
+      const threshold = last10.length * 0.7;
+      return Object.entries(count)
+        .filter(([, c]) => c >= threshold)
+        .filter(([name]) => !checked[name])
+        .map(([name]) => name);
+    }
+
+    // --- Render ---
+    function render() {
+      const main = document.getElementById('main');
+
+      if (showPending) {
+        renderPending(main);
+        return;
+      }
+
+      let totalShown = 0;
+      let totalChecked = 0;
+      let totalEstimate = 0;
+      let html = '';
+
+      // Pending suggestion banner (empty list + pending items)
+      const hasChecked = Object.keys(checked).length > 0;
+      if (!showMyList && !searchQuery && !hasChecked && pending.length > 0 && !pendingDismissed) {
+        html += '<div class="recurrent-banner">';
+        html += '<p>Tienes <b>' + pending.length + '</b> producto' + (pending.length > 1 ? 's' : '') + ' pendiente' + (pending.length > 1 ? 's' : '') + ' de la compra anterior:</p>';
+        html += '<div class="freq-chips">';
+        pending.forEach(p => {
+          html += '<button class="freq-chip" onclick="addPendingItem(\'' + escapeAttr(p.name) + '\')">+ ' + escapeHtml(p.name) + '</button>';
+        });
+        html += '</div>';
+        html += '<div style="display:flex;gap:8px;margin-top:8px">';
+        html += '<button class="freq-chip" style="border-style:solid;font-weight:700" onclick="addAllPending()">Añadir todos</button>';
+        html += '<button class="recurrent-dismiss" onclick="dismissPending()">No, gracias</button>';
+        html += '</div>';
+        html += '</div>';
+      }
+
+      // Recurrent banner (only on main view, no search, no myList)
+      if (!showMyList && !searchQuery && !recurrentDismissed) {
+        const recurrents = getRecurrentProducts();
+        if (recurrents.length > 0) {
+          html += '<div class="recurrent-banner">';
+          html += '<p>Sueles comprar estos productos:</p>';
+          html += '<div class="freq-chips">';
+          recurrents.forEach(name => {
+            html += '<button class="freq-chip" onclick="quickAdd(\'' + escapeAttr(name) + '\')">+ ' + escapeHtml(name) + '</button>';
+          });
+          html += '</div>';
+          html += '<button class="recurrent-dismiss" onclick="dismissRecurrent()">No, gracias</button>';
+          html += '</div>';
+        }
+      }
+
+      // Frequent suggestions
+      if (!showMyList && !searchQuery) {
+        const frequent = getFrequentProducts();
+        if (frequent.length > 0) {
+          html += '<div class="freq-section">';
+          html += '<div class="freq-title">Frecuentes</div>';
+          html += '<div class="freq-chips">';
+          frequent.forEach(name => {
+            html += '<button class="freq-chip" onclick="quickAdd(\'' + escapeAttr(name) + '\')">+ ' + escapeHtml(name) + '</button>';
+          });
+          html += '</div></div>';
+        }
+      }
+
+      DATA.forEach(cat => {
+        const products = getFilteredProducts(cat);
+        if (products.length === 0) return;
+
+        const catChecked = products.filter(p => checked[p.name]).length;
+        totalShown += products.length;
+        totalChecked += catChecked;
+
+        const isCollapsed = searchQuery ? false : collapsed[cat.name];
+        const icon = CATEGORY_ICONS[cat.name] || '\u{1F4CB}';
+
+        html += '<div class="category">';
+        html += '<div class="cat-header ' + (isCollapsed ? 'collapsed' : '') + '" role="button" aria-expanded="' + !isCollapsed + '" onclick="toggleCat(\'' + escapeAttr(cat.name) + '\')">';
+        html += '<span class="cat-icon">' + icon + '</span>';
+        html += '<span class="cat-name">' + cat.name + '</span>';
+        html += '<span class="cat-count">' + catChecked + '/' + products.length + '</span>';
+        html += '<span class="cat-chevron">\u25BC</span>';
+        html += '</div>';
+        html += '<div class="product-list ' + (isCollapsed ? 'hidden' : '') + '">';
+
+        products.forEach(p => {
+          const esc = escapeAttr(p.name);
+          const storeText = p.stores.join(', ');
+          const note = notes[p.name];
+          const q = qty[p.name] || 1;
+          const price = prices[p.name];
+
+          if (showMyList) {
+            const isBought = bought[p.name];
+            const displayName = q > 1 ? q + 'x ' + p.name : p.name;
+            if (price) totalEstimate += price * q;
+
+            html += '<div class="product ' + (isBought ? 'checked bought' : '') + '" role="checkbox" aria-checked="' + !!isBought + '">';
+            html += '<div class="checkbox" onclick="toggle(\'' + esc + '\')"></div>';
+            html += '<div class="product-info" onclick="toggle(\'' + esc + '\')">';
+            html += '<div class="product-name">' + escapeHtml(displayName) + '</div>';
+            html += '<div class="product-stores">' + escapeHtml(storeText);
+            if (price) html += ' &middot; ' + (price * q).toFixed(2) + ' €';
+            html += '</div>';
+            if (note) html += '<div class="product-note">' + escapeHtml(note) + '</div>';
+            html += '</div>';
+            // Quantity controls in my list
+            html += '<div class="qty-controls">';
+            html += '<button class="qty-btn" onclick="event.stopPropagation();changeQty(\'' + esc + '\',-1)" aria-label="Reducir cantidad">&minus;</button>';
+            html += '<span class="qty-val">' + q + '</span>';
+            html += '<button class="qty-btn" onclick="event.stopPropagation();changeQty(\'' + esc + '\',1)" aria-label="Aumentar cantidad">+</button>';
+            html += '</div>';
+            html += '</div>';
+          } else {
+            const isChecked = checked[p.name];
+            if (isChecked && price) totalEstimate += price * q;
+            html += '<div class="product ' + (isChecked ? 'checked' : '') + '" role="checkbox" aria-checked="' + !!isChecked + '">';
+            html += '<div class="checkbox" onclick="toggle(\'' + esc + '\')"></div>';
+            html += '<div class="product-info" onclick="toggle(\'' + esc + '\')">';
+            html += '<div class="product-name">' + escapeHtml(p.name) + '</div>';
+            html += '<div class="product-stores">' + escapeHtml(storeText);
+            if (price) html += ' &middot; ' + price.toFixed(2) + ' €';
+            html += '</div>';
+            if (note) html += '<div class="product-note">' + escapeHtml(note) + '</div>';
+            html += '</div>';
+            html += '<div class="product-actions">';
+            html += '<button onclick="event.stopPropagation();editProduct(\'' + escapeAttr(cat.name) + '\',\'' + esc + '\')" aria-label="Editar ' + escapeHtml(p.name) + '">\u270F\uFE0F</button>';
+            html += '<button onclick="event.stopPropagation();deleteProduct(\'' + escapeAttr(cat.name) + '\',\'' + esc + '\')" aria-label="Eliminar ' + escapeHtml(p.name) + '">\u{1F5D1}\uFE0F</button>';
+            html += '</div></div>';
+          }
+        });
+
+        html += '</div></div>';
+      });
+
+      // Total estimate
+      if (totalEstimate > 0) {
+        html += '<div class="list-total">Total estimado: ' + totalEstimate.toFixed(2) + ' €</div>';
+      }
+
+      if (totalShown === 0) {
+        html = '<div class="empty"><div class="empty-icon">\u{1F50D}</div><div class="empty-text">' +
+          (searchQuery ? 'Sin resultados para "' + escapeHtml(searchQuery) + '"' :
+            showMyList ? 'No hay productos en tu lista' : 'No hay productos para esta tienda') +
+          '</div></div>';
+      }
+
+      main.innerHTML = html;
+      document.getElementById('counter').innerHTML = '<b>' + totalChecked + '</b> / ' + totalShown;
+
+      const hasAny = Object.keys(checked).length > 0 || Object.keys(myList).length > 0;
+      document.getElementById('listBtn').classList.toggle('visible', hasAny);
+      document.getElementById('listBtn').textContent = showMyList ? 'Ver todo' : 'Ver mi lista';
+      document.getElementById('clearBtn').classList.toggle('visible', showMyList);
+      document.getElementById('resetBtn').classList.toggle('visible', !showMyList && Object.keys(checked).length > 0);
+
+      const pendingBtn = document.getElementById('pendingBtn');
+      pendingBtn.classList.toggle('visible', pending.length > 0);
+      pendingBtn.classList.remove('active');
+      pendingBtn.innerHTML = 'Pendientes<span class="pending-badge">' + pending.length + '</span>';
+    }
+
+    function renderPending(main) {
+      let html = '';
+      const groups = {};
+      pending.forEach((p, i) => {
+        const cat = p.category || 'OTROS';
+        if (!groups[cat]) groups[cat] = [];
+        groups[cat].push({ ...p, idx: i });
+      });
+
+      const boughtCount = Object.keys(pendingBought).length;
+
+      Object.keys(groups).forEach(catName => {
+        const items = groups[catName];
+        const icon = CATEGORY_ICONS[catName] || '\u{1F4CB}';
+        html += '<div class="category">';
+        html += '<div class="cat-header" role="button">';
+        html += '<span class="cat-icon">' + icon + '</span>';
+        html += '<span class="cat-name">' + catName + '</span>';
+        html += '<span class="cat-count">' + items.length + '</span>';
+        html += '</div>';
+        html += '<div class="product-list">';
+
+        items.forEach(p => {
+          const esc = escapeAttr(p.name);
+          const isBought = pendingBought[p.name];
+          html += '<div class="product ' + (isBought ? 'checked bought' : '') + '" role="checkbox" aria-checked="' + !!isBought + '" onclick="togglePendingItem(\'' + esc + '\')">';
+          html += '<div class="checkbox"></div>';
+          html += '<div class="product-info">';
+          html += '<div class="product-name">' + escapeHtml(p.name) + '</div>';
+          html += '<div class="product-stores">' + escapeHtml(p.stores.join(', ')) + '</div>';
+          html += '<div class="pending-date">Pendiente desde ' + p.date + '</div>';
+          html += '</div></div>';
+        });
+
+        html += '</div></div>';
+      });
+
+      if (pending.length === 0) {
+        html = '<div class="empty"><div class="empty-icon">\u{2705}</div><div class="empty-text">No tienes productos pendientes</div></div>';
+      }
+
+      main.innerHTML = html;
+      document.getElementById('counter').innerHTML = '<b>' + boughtCount + '</b> / ' + pending.length;
+
+      document.getElementById('listBtn').classList.remove('visible');
+      document.getElementById('resetBtn').classList.remove('visible');
+      document.getElementById('clearBtn').classList.toggle('visible', pending.length > 0);
+
+      const pendingBtn = document.getElementById('pendingBtn');
+      pendingBtn.classList.add('visible');
+      pendingBtn.classList.add('active');
+      pendingBtn.innerHTML = 'Volver';
+    }
+
+    // --- Quick add (from frequent/recurrent chips) ---
+    function quickAdd(name) {
+      checked[name] = true;
+      localStorage.setItem('lista-checked', JSON.stringify(checked));
+      render();
+    }
+
+    function dismissRecurrent() {
+      recurrentDismissed = true;
+      sessionStorage.setItem('lista-recurrent-dismissed', 'true');
+      render();
+    }
+
+    function addPendingItem(name) {
+      checked[name] = true;
+      localStorage.setItem('lista-checked', JSON.stringify(checked));
+      pending = pending.filter(p => p.name !== name);
+      localStorage.setItem('lista-pending', JSON.stringify(pending));
+      render();
+    }
+
+    function addAllPending() {
+      pending.forEach(p => { checked[p.name] = true; });
+      localStorage.setItem('lista-checked', JSON.stringify(checked));
+      pending = [];
+      localStorage.setItem('lista-pending', JSON.stringify(pending));
+      render();
+    }
+
+    function dismissPending() {
+      pendingDismissed = true;
+      render();
+    }
+
+    // --- Quantity ---
+    function changeQty(name, delta) {
+      const current = qty[name] || 1;
+      const next = Math.max(1, current + delta);
+      if (next === 1) delete qty[name];
+      else qty[name] = next;
+      localStorage.setItem('lista-qty', JSON.stringify(qty));
+      render();
+    }
+
+    // --- Toggle ---
+    function togglePendingItem(name) {
+      if (pendingBought[name]) delete pendingBought[name];
+      else pendingBought[name] = true;
+      localStorage.setItem('lista-pending-bought', JSON.stringify(pendingBought));
+      render();
+    }
+
+    function togglePending() {
+      showPending = !showPending;
+      showMyList = false;
+      render();
+    }
+
+    function toggle(name) {
+      if (showMyList) {
+        if (bought[name]) delete bought[name];
+        else bought[name] = true;
+        localStorage.setItem('lista-bought', JSON.stringify(bought));
+      } else {
+        if (checked[name]) delete checked[name];
+        else checked[name] = true;
+        localStorage.setItem('lista-checked', JSON.stringify(checked));
+      }
+      render();
+    }
+
+    function toggleCat(name) {
+      if (collapsed[name]) delete collapsed[name];
+      else collapsed[name] = true;
+      localStorage.setItem('lista-collapsed', JSON.stringify(collapsed));
+      render();
+    }
+
+    function toggleMyList() {
+      showPending = false;
+      if (!showMyList) {
+        Object.assign(myList, checked);
+        localStorage.setItem('lista-mylist', JSON.stringify(myList));
+      }
+      showMyList = !showMyList;
+      render();
+    }
+
+    function formatDate(d) {
+      const day = d.getDate();
+      const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+      const h = String(d.getHours()).padStart(2,'0');
+      const m = String(d.getMinutes()).padStart(2,'0');
+      return day + ' ' + months[d.getMonth()] + ' ' + d.getFullYear() + ', ' + h + ':' + m;
+    }
+
+    function clearMyList() {
+      if (showPending) {
+        const boughtNames = Object.keys(pendingBought);
+        if (boughtNames.length === 0) return;
+        if (!confirm('¿Eliminar los ' + boughtNames.length + ' productos marcados?')) return;
+        pending = pending.filter(p => !pendingBought[p.name]);
+        pendingBought = {};
+        localStorage.setItem('lista-pending', JSON.stringify(pending));
+        localStorage.setItem('lista-pending-bought', JSON.stringify(pendingBought));
+        if (pending.length === 0) {
+          showPending = false;
+          currentStore = 'Todas';
+          renderStoreTabs();
+        }
+        render();
+        return;
+      }
+
+      if (!confirm('¿Borrar la lista de la compra?')) return;
+
+      // Save to history before clearing
+      const boughtItems = [];
+      Object.keys(myList).forEach(name => {
+        if (bought[name]) {
+          boughtItems.push({ name, qty: qty[name] || 1, price: prices[name] || 0 });
+        }
+      });
+      if (boughtItems.length > 0) {
+        history.push({ date: formatDate(new Date()), items: boughtItems });
+        if (history.length > 50) history = history.slice(-50);
+        localStorage.setItem('lista-history', JSON.stringify(history));
+      }
+
+      // Move unbought to pending
+      const now = formatDate(new Date());
+      Object.keys(myList).forEach(name => {
+        if (!bought[name]) {
+          let stores = [], category = '';
+          DATA.forEach(cat => {
+            const p = cat.products.find(pr => pr.name === name);
+            if (p) { stores = p.stores; category = cat.name; }
+          });
+          if (!pending.find(pp => pp.name === name)) {
+            pending.push({ name, stores, category, date: now });
+          }
+        }
+      });
+      localStorage.setItem('lista-pending', JSON.stringify(pending));
+
+      checked = {};
+      myList = {};
+      bought = {};
+      // Keep qty and prices — they persist across lists
+      localStorage.setItem('lista-checked', JSON.stringify(checked));
+      localStorage.setItem('lista-mylist', JSON.stringify(myList));
+      localStorage.setItem('lista-bought', JSON.stringify(bought));
+      showMyList = false;
+      pendingDismissed = false;
+      currentStore = 'Todas';
+      renderStoreTabs();
+      render();
+    }
+
+    // --- Add/Edit Modal ---
+    function openAddModal(catName, productName) {
+      editingProduct = null;
+      selectedStores = [];
+      const select = document.getElementById('addCategory');
+      select.innerHTML = DATA.map(c =>
+        '<option value="' + escapeAttr(c.name) + '">' + c.name + '</option>'
+      ).join('');
+
+      document.getElementById('addNote').value = '';
+      document.getElementById('addPrice').value = '';
+
+      if (catName && productName) {
+        editingProduct = { catName, productName };
+        const cat = DATA.find(c => c.name === catName);
+        const prod = cat && cat.products.find(p => p.name === productName);
+        if (prod) {
+          document.getElementById('addName').value = prod.name;
+          select.value = catName;
+          selectedStores = [...prod.stores];
+          if (notes[productName]) document.getElementById('addNote').value = notes[productName];
+          if (prices[productName]) document.getElementById('addPrice').value = prices[productName];
+        }
+        document.querySelector('#addModal .modal h2').textContent = 'Editar producto';
+      } else {
+        document.getElementById('addName').value = '';
+        document.querySelector('#addModal .modal h2').textContent = 'Nuevo producto';
+      }
+
+      renderModalStores();
+      document.getElementById('addModal').classList.add('open');
+      setTimeout(() => document.getElementById('addName').focus(), 100);
+    }
+
+    function editProduct(catName, productName) {
+      openAddModal(catName, productName);
+    }
+
+    function closeAddModal() {
+      document.getElementById('addModal').classList.remove('open');
+    }
+
+    function closeModalOverlay(e, id) {
+      if (e.target === e.currentTarget) document.getElementById(id).classList.remove('open');
+    }
+
+    function renderModalStores() {
+      document.getElementById('addStores').innerHTML = ALL_STORES.map(s =>
+        '<button class="modal-store-chip ' + (selectedStores.includes(s) ? 'selected' : '') +
+        '" onclick="toggleModalStore(\'' + s + '\')">' + s + '</button>'
+      ).join('');
+    }
+
+    function toggleModalStore(store) {
+      const i = selectedStores.indexOf(store);
+      if (i >= 0) selectedStores.splice(i, 1);
+      else selectedStores.push(store);
+      renderModalStores();
+    }
+
+    function saveProduct() {
+      const name = document.getElementById('addName').value.trim();
+      const category = document.getElementById('addCategory').value;
+      const note = document.getElementById('addNote').value.trim();
+      const priceVal = parseFloat(document.getElementById('addPrice').value);
+      if (!name) { alert('Escribe un nombre'); return; }
+      if (selectedStores.length === 0) { alert('Selecciona al menos una tienda'); return; }
+
+      const stores = [...selectedStores];
+      let custom = JSON.parse(localStorage.getItem('lista-custom') || '[]');
+
+      if (editingProduct) {
+        const oldName = editingProduct.productName;
+        const oldCatName = editingProduct.catName;
+        const nameChanged = oldName !== name;
+        const catChanged = oldCatName !== category;
+
+        // Update in-place if same category, otherwise move
+        if (catChanged) {
+          const oldCat = DATA.find(c => c.name === oldCatName);
+          if (oldCat) oldCat.products = oldCat.products.filter(p => p.name !== oldName);
+          let newCat = DATA.find(c => c.name === category);
+          if (!newCat) { newCat = { name: category, products: [] }; DATA.push(newCat); }
+          newCat.products.push({ name, stores });
+        } else {
+          const cat = DATA.find(c => c.name === category);
+          const prod = cat && cat.products.find(p => p.name === oldName);
+          if (prod) {
+            prod.name = name;
+            prod.stores = stores;
+          }
+        }
+
+        // Rename keys if name changed
+        if (nameChanged) {
+          if (checked[oldName]) { checked[name] = true; delete checked[oldName]; localStorage.setItem('lista-checked', JSON.stringify(checked)); }
+          if (myList[oldName]) { myList[name] = true; delete myList[oldName]; localStorage.setItem('lista-mylist', JSON.stringify(myList)); }
+          if (bought[oldName]) { bought[name] = true; delete bought[oldName]; localStorage.setItem('lista-bought', JSON.stringify(bought)); }
+          if (qty[oldName]) { qty[name] = qty[oldName]; delete qty[oldName]; }
+          if (notes[oldName]) { delete notes[oldName]; }
+          if (prices[oldName]) { delete prices[oldName]; }
+        }
+
+        custom = custom.filter(c => !(c.name === oldName && c.category === oldCatName));
+      } else {
+        // New product — check duplicate
+        let cat = DATA.find(c => c.name === category);
+        if (!cat) { cat = { name: category, products: [] }; DATA.push(cat); }
+        if (cat.products.find(p => p.name.toLowerCase() === name.toLowerCase())) {
+          alert('Ese producto ya existe en ' + category);
+          return;
+        }
+        cat.products.push({ name, stores });
+      }
+
+      // Save note
+      if (note) notes[name] = note;
+      else delete notes[name];
+      localStorage.setItem('lista-notes', JSON.stringify(notes));
+
+      // Save price
+      if (priceVal > 0) prices[name] = priceVal;
+      else delete prices[name];
+      localStorage.setItem('lista-prices', JSON.stringify(prices));
+
+      custom.push({ name, category, stores });
+      localStorage.setItem('lista-custom', JSON.stringify(custom));
+
+      editingProduct = null;
+      closeAddModal();
+      renderStoreTabs();
+      render();
+    }
+
+    function deleteProduct(catName, productName) {
+      if (!confirm('¿Eliminar "' + productName + '"?')) return;
+      const cat = DATA.find(c => c.name === catName);
+      if (cat) cat.products = cat.products.filter(p => p.name !== productName);
+      delete checked[productName];
+      delete myList[productName];
+      delete bought[productName];
+      delete qty[productName];
+      delete notes[productName];
+      delete prices[productName];
+      localStorage.setItem('lista-checked', JSON.stringify(checked));
+      localStorage.setItem('lista-mylist', JSON.stringify(myList));
+      localStorage.setItem('lista-bought', JSON.stringify(bought));
+      localStorage.setItem('lista-qty', JSON.stringify(qty));
+      localStorage.setItem('lista-notes', JSON.stringify(notes));
+      localStorage.setItem('lista-prices', JSON.stringify(prices));
+
+      let custom = JSON.parse(localStorage.getItem('lista-custom') || '[]');
+      custom = custom.filter(c => !(c.name === productName && c.category === catName));
+      localStorage.setItem('lista-custom', JSON.stringify(custom));
+
+      renderStoreTabs();
+      render();
+    }
+
+    // --- Settings ---
+    function openSettings() {
+      renderHistory();
+      renderSpendChart();
+      document.getElementById('installSection').style.display = deferredInstallPrompt ? '' : 'none';
+      document.getElementById('settingsModal').classList.add('open');
+    }
+
+    function closeSettings() {
+      document.getElementById('settingsModal').classList.remove('open');
+    }
+
+    // --- Export/Import ---
+    function exportData() {
+      const data = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('lista-')) data[key] = localStorage.getItem(key);
+      }
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'lista-compra-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (!confirm('Se restaurarán ' + Object.keys(data).length + ' claves. ¿Continuar?')) return;
+          Object.entries(data).forEach(([key, val]) => {
+            if (key.startsWith('lista-')) localStorage.setItem(key, val);
+          });
+          location.reload();
+        } catch (err) {
+          alert('Error al importar: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    // --- History ---
+    function renderHistory() {
+      const el = document.getElementById('historyList');
+      if (history.length === 0) {
+        el.innerHTML = '<div class="history-empty">Aún no hay compras registradas. Se guardan automáticamente al borrar la lista.</div>';
+        return;
+      }
+      el.innerHTML = history.slice().reverse().map(h => {
+        const items = h.items.map(i => (i.qty > 1 ? i.qty + 'x ' : '') + i.name).join(', ');
+        return '<div class="history-item"><div class="history-date">' + h.date + '</div>' +
+          '<div class="history-products">' + escapeHtml(items) + '</div></div>';
+      }).join('');
+    }
+
+    // --- Spend chart ---
+    function renderSpendChart() {
+      const el = document.getElementById('spendChart');
+      if (history.length === 0) {
+        el.innerHTML = '<div class="history-empty">Sin datos de gasto</div>';
+        return;
+      }
+      const months = {};
+      const monthNames = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+      history.forEach(h => {
+        // Parse date like "5 jun 2026, 14:30"
+        const parts = h.date.split(' ');
+        const monthIdx = monthNames.indexOf(parts[1]);
+        const year = parseInt(parts[2]);
+        if (monthIdx < 0 || isNaN(year)) return;
+        const key = year + '-' + String(monthIdx + 1).padStart(2, '0');
+        const label = parts[1] + ' ' + year;
+        if (!months[key]) months[key] = { label, total: 0 };
+        h.items.forEach(i => { months[key].total += (i.price || 0) * (i.qty || 1); });
+      });
+      const sorted = Object.entries(months).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 6).reverse();
+      if (sorted.length === 0 || sorted.every(([, v]) => v.total === 0)) {
+        el.innerHTML = '<div class="history-empty">Añade precios a los productos para ver el gasto</div>';
+        return;
+      }
+      const max = Math.max(...sorted.map(([, v]) => v.total));
+      el.innerHTML = '<div class="spend-chart">' + sorted.map(([, v]) => {
+        const pct = max > 0 ? (v.total / max * 100) : 0;
+        return '<div class="spend-bar-row"><span class="spend-label">' + v.label + '</span>' +
+          '<div class="spend-bar-bg"><div class="spend-bar-fill" style="width:' + pct + '%"><span>' + v.total.toFixed(2) + '€</span></div></div></div>';
+      }).join('') + '</div>';
+    }
+
+    // --- Install PWA ---
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+    });
+    function installApp() {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      deferredInstallPrompt.userChoice.then(() => { deferredInstallPrompt = null; });
+    }
+
+    // --- Init ---
+    initTheme();
+    renderStoreTabs();
+    render();
+
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
